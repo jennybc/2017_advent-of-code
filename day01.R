@@ -11,8 +11,7 @@ expect_equal(rev_captcha("1111"), 4)
 expect_equal(rev_captcha("1234"), 0)
 expect_equal(rev_captcha("91212129"), 9)
 
-txt <- scan("R/day01_input.txt", what = "character")
-rev_captcha(txt)
+rev_captcha(readLines("day01_input.txt"))
 
 rev_captcha2 <- function(x, lag = length(x)/2) {
   x <- as.integer(strsplit(x, "")[[1]])
@@ -26,8 +25,7 @@ expect_equal(rev_captcha2("123425"), 4)
 expect_equal(rev_captcha2("123123"), 12)
 expect_equal(rev_captcha2("12131415"), 4)
 
-txt <- scan("R/day01_input.txt", what = "character")
-rev_captcha2(txt)
+rev_captcha2(readLines("day01_input.txt"))
 
 ## revisit first examples
 expect_equal(rev_captcha2("1122", 1), 3)
