@@ -9,7 +9,8 @@ jenny
 library(testthat)
 library(tidyverse)
 
-is_valid <- function(x) length(x) == n_distinct(x)
+#is_valid <- function(x) length(x) == n_distinct(x)
+is_valid <- function(x) !anyDuplicated(x)
 
 normalize <- function(x) {
   xs <- strsplit(x, "")
