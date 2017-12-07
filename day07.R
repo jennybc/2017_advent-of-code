@@ -4,6 +4,7 @@
 #' date: "`r format(Sys.Date())`"
 #' output: github_document
 #' ---
+#'
 #+ setup, include = FALSE, cache = FALSE
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -19,15 +20,13 @@ library(tidyverse)
 ## part 1
 
 bottom <- function(x) {
-  suppressWarnings(
-    tibble(x = x) %>%
-      separate(x, into = c("name_weight", "above"), sep = " -> ") %>%
-      separate(name_weight, into = c("name", "weight")) %>%
-      separate_rows(above, sep = ", ") %>%
-      filter(!is.na(above)) %>% {
-        setdiff(.$name, .$above)
-      }
-  )
+  tibble(x = x) %>%
+    separate(x, into = c("name_weight", "above"), sep = " -> ", fill = "right") %>%
+    separate(name_weight, into = c("name", "weight"), extra = "drop") %>%
+    separate_rows(above, sep = ", ") %>%
+    filter(!is.na(above)) %>% {
+      setdiff(.$name, .$above)
+    }
 }
 
 testthat::expect_equal(bottom(read_lines("day07_part1_example.txt")), "tknk")
@@ -38,7 +37,7 @@ x <- read_lines("day07_input.txt")
 
 df <- tibble(x = x) %>%
   separate(x, into = c("name_weight", "above"), sep = " -> ", fill = "right") %>%
-  separate(name_weight, into = c("name", "weight")) %>%
+  separate(name_weight, into = c("name", "weight"), extra = "drop") %>%
   mutate(
     weight = as.integer(weight),
     above = strsplit(above, ", ")
