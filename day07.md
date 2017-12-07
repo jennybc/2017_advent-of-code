@@ -1,82 +1,95 @@
 Advent of Code 2017, Day 7
 ================
 Jenny Bryan
-2017-12-07
+2017-12-08
 
 <http://adventofcode.com/2017/day/7>
 
 ``` r
 library(tidyverse)
+example_input <- read_lines("day07_part1_example.txt")
+jenny_input <-  read_lines("day07_input.txt")
 
-## part 1
-
-bottom <- function(x) {
-  suppressWarnings(
-    tibble(x = x) %>%
-      separate(x, into = c("name_weight", "above"), sep = " -> ") %>%
-      separate(name_weight, into = c("name", "weight")) %>%
-      separate_rows(above, sep = ", ") %>%
-      filter(!is.na(above)) %>% {
-        setdiff(.$name, .$above)
-      }
-  )
+## converts AoC input into a tibble, with one row per program and variables
+##   * name
+##   * weight
+##   * above: a list-column of character vectors of names of the programs above
+##            this one; NA indicates no programs are above
+##   * total_weight: includes this program and those above; equals weight if
+##            above is NA, i.e. there are no programs above
+entibble <- function(x) {
+  ret <- tibble(x = x) %>%
+    separate(x, into = c("name_weight", "above"), sep = " -> ", fill = "right") %>%
+    separate(name_weight, into = c("name", "weight"), extra = "drop") %>%
+    mutate(
+      weight = as.integer(weight),
+      above = strsplit(above, ", ")
+    )
+  ret$total_weight <- map_int(ret$name, tw, df = ret)
+  ret
 }
 
-testthat::expect_equal(bottom(read_lines("day07_part1_example.txt")), "tknk")
-bottom(read_lines("day07_input.txt"))
-#> [1] "hlhomy"
+## input as given by advent of code
+## returns name of program at base of tower
+find_root <- function(x) {
+  xdf <- entibble(x)
+  setdiff(xdf$name, unlist(xdf$above))
+}
 
-## part 2
-x <- read_lines("day07_input.txt")
-
-df <- tibble(x = x) %>%
-  separate(x, into = c("name_weight", "above"), sep = " -> ", fill = "right") %>%
-  separate(name_weight, into = c("name", "weight")) %>%
-  mutate(
-    weight = as.integer(weight),
-    above = strsplit(above, ", ")
-  )
-#> Warning: Too many values at 1605 locations: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-#> 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...
-
-tw <- function(nm) {
+## compute total weight of program named 'nm'
+tw <- function(nm, df) {
   i <- which(df$name == nm)
   wt <- df$weight[i]
   a <- df$above[[i]]
   if (all(is.na(a))) {
     wt
   } else {
-    sum(c(unlist(map(a, tw)), wt))
+    sum(c(unlist(map(a, tw, df)), wt))
   }
 }
 
-df$total_weight <- map_int(df$name, tw)
+## part 1
+testthat::expect_equal(find_root(example_input), "tknk")
+find_root(jenny_input)
+#> [1] "hlhomy"
 
-b <- "hlhomy"
-res <- list()
-while(TRUE) {
-  i <- which(df$name == b)
+## part 2
+find_unbalanced <- function(nm, df) {
+  i <- which(df$name == nm)
   a <- df$above[[i]]
-  tws <- map_int(a, tw)
-  oops <- tws != min(tws)
-  res[[b]] <- set_names(tws, a)
-  if (!any(oops)) break
-  b <- a[oops]
+  tws <- df$total_weight[match(a, df$name)]
+  unbalanced <- tws != min(tws)
+  if (!any(unbalanced)) {
+    return()
+  } else {
+    ret <- list()
+    ret[[nm]] <- set_names(tws, a)
+    c(ret, find_unbalanced(a[unbalanced], df))
+  }
 }
-res <- rev(res)
 
-## the problematic program is in here
-(z <- res[[2]])
-#> apjxafk  jngcap wrtyhxg  hblcbb 
-#>    1579    1571    1571    1571
-oops <- z != min(z)
+suggest_fix <- function(x) {
+  xdf <- entibble(x)
+  res <- find_unbalanced(find_root(x), xdf)
 
-## it's this one
-z[oops]
-#> apjxafk 
-#>    1579
+  bad_layer <- res[[length(res)]]
+  culprit <- bad_layer[bad_layer != min(bad_layer)]
+  i <- which(xdf$name == names(culprit))
+  l <- list(
+    program = names(culprit),
+    weight = xdf$weight[i],
+    fixed_weight = min(bad_layer) - (xdf$total_weight[i] - xdf$weight[i])
+  )
+  message(
+    "program ", l$program,
+    ": given wt ", l$weight,
+    ", fixed wt ", l$fixed_weight
+  )
+  invisible(l)
+}
 
-## this is what its weight needs to be for balance
-min(z) - sum(res[[1]])
-#> [1] 1505
+suggest_fix(example_input)
+#> program ugml: given wt 68, fixed wt 60
+suggest_fix(jenny_input)
+#> program apjxafk: given wt 1513, fixed wt 1505
 ```
