@@ -1,27 +1,29 @@
-#' ---
-#' title: "Advent of Code 2017, Day 11"
-#' author: "Jenny Bryan"
-#' date: "`r format(Sys.Date())`"
-#' output: github_document
-#' ---
-#'
-#+ setup, include = FALSE, cache = FALSE
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  error = TRUE
-)
-options(tidyverse.quiet = TRUE)
+Advent of Code 2017, Day 11
+================
+Jenny Bryan
+2017-12-15
 
-#' <http://adventofcode.com/2017/day/11>
+<http://adventofcode.com/2017/day/11>
 
+``` r
 library(tidyverse)
 library(testthat)
+#> 
+#> Attaching package: 'testthat'
+#> The following object is masked from 'package:dplyr':
+#> 
+#>     matches
+#> The following object is masked from 'package:purrr':
+#> 
+#>     is_null
+```
 
-#' ## Part 1
+Part 1
+------
 
-#' ### Functions
+### Functions
 
+``` r
 ## x = character vector of values from n, ne, se, s, sw, nw
 ## returns 2-vector = c(h = horizontal offset, v = vertical offset)
 hdist <- function(x) {
@@ -36,8 +38,11 @@ steps <- function(x) {
   d <- hdist(x)
   unname(0.5 * d["h"] + d["v"])
 }
+```
 
-#' ### Example input
+### Example input
+
+``` r
 t <- tribble(
              ~ raw, ~ ref,
         "ne,ne,ne",     3,
@@ -54,9 +59,16 @@ expect_equal(t$ref, t$steps)
 
 x <- scan("day11_input.txt", what = "", sep = ",")
 hdist(x)
+#>   h   v 
+#> 438 577
 steps(x)
+#> [1] 796
+```
 
-#' ## Part 2
+Part 2
+------
+
+``` r
 x <- scan("day11_input.txt", what = "", sep = ",")
 
 ## this is very inefficient, but I'm not starting over!
@@ -64,6 +76,8 @@ out <- map_dbl(seq_along(x), ~ steps(head(x, .x)))
 
 ## this better be same as previous result!
 out[length(out)]
+#> [1] 796
 
 max(out)
-
+#> [1] 1585
+```
