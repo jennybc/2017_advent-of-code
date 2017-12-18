@@ -17,33 +17,21 @@ options(tidyverse.quiet = TRUE)
 
 library(tidyverse)
 library(testthat)
+library(igraph)
 
-#' ### Functions
+#' igraph makes this so easy, it feels like cheating.
+
 prep <- function(s) {
-  tibble(x = s) %>%
+  tibble(x = read_lines(s)) %>%
     separate(x, into = c("a", "b"), sep = " <-> ") %>%
     mutate(
       a = as.integer(a),
-      d = map(b, ~ strsplit(.x, split = ", ") %>% pluck(1) %>% as.integer())
-    )
+      b = map(b, ~ strsplit(.x, split = ", ") %>% pluck(1) %>% as.integer())
+    ) %>%
+    unnest()
 }
 
-connected <- function(df, x = 0) {
-  for(i in seq_len(nrow(df))) {
-    conn <- c(df$a[i], df$d[[i]])
-    if (any(x %in% conn)) {
-      x <- union(x, conn)
-    }
-  }
-  sort(x)
-}
-
-disconnected <- function(df, x = 0) {
-  conn <- connected(df, x)
-  setdiff(df$a, conn)
-}
-
-#' ### Test input
+#' ## Testing
 x <- c(
   "0 <-> 2",
   "1 <-> 1",
@@ -54,9 +42,17 @@ x <- c(
   "6 <-> 4, 5"
 )
 
-x %>% prep() %>% disconnected()
+df <- prep(x)
+g <- graph_from_data_frame(df, directed = FALSE)
+cpts <- components(g)
+expect_equal(sum(cpts$membership == cpts$membership["0"]), 6)
+expect_equal(cpts$no, 2)
 
-#' ### My input
-x <- readLines("day12_input.txt")
-disc <- x %>% prep() %>% disconnected()
-length(disc)
+#' ## My input
+df <- prep("day12_input.txt")
+g <- graph_from_data_frame(df, directed = FALSE)
+cpts <- components(g, mode = "weak")
+
+sum(cpts$membership == cpts$membership["0"])
+
+cpts$no
